@@ -16,7 +16,7 @@ O **OmniFit Digital** é uma plataforma de alta performance desenvolvida para co
 
 ### 🏠 Institucional e Planos
 - **Landing Page Completa:** Seções de métricas (+50k alunos), diferenciais técnicos e tecnologia.
-- **Tabela de Planos:** Visualização detalhada dos planos Fit, Black e Smart, com todos os benefícios e promoções restaurados.
+- **Tabela de Planos:** Visualização detalhada dos planos Fit, Black e Smart, com todos os benefícios e promoções restaurados...
 
 ---
 
