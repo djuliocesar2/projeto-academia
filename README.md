@@ -63,4 +63,4 @@ Perfil Personal: Use qualquer e-mail que contenha a palavra personal (ex: coach.
 
 Perfil Aluno: Use nomes de alunos registrados para carregar treinos específicos (ex: julio@email.com, igor@email.com, luan@email.com).
 
-Desenvolvido por Julio Cesar Nascimento.
+Desenvolvido por Julio Cesar Nascimento, Henrique Barros, Luan Martiniano e Igor Matos.
