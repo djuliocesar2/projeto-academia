@@ -1,52 +1,50 @@
-OmniFit Digital 🏋️‍♂️⚡️
-O OmniFit Digital é uma plataforma completa de gestão de treinamentos, projetada para conectar Personal Trainers e Alunos em um ecossistema de alta performance. O sistema oferece interfaces personalizadas para cada tipo de usuário, permitindo prescrições detalhadas e acompanhamento em tempo real.
+# OmniFit Digital 🏋️‍♂️⚡️
 
-🚀 Funcionalidades Principais
-Para Alunos (Identidade Verde Neon)
-Dashboard Motivacional: Visualização clara do plano ativo e foco do dia.
+O **OmniFit Digital** é uma plataforma de alta performance desenvolvida para conectar Personal Trainers e Alunos. O sistema oferece uma gestão completa de treinos com interfaces personalizadas, garantindo que a prescrição seja feita de forma profissional e o acompanhamento pelo aluno seja intuitivo e dinâmico.
 
-Agenda Semanal: Acompanhamento de treinos de segunda a sexta-feira.
+## 🚀 Funcionalidades Principais
 
-Ficha de Treino Detalhada: Acesso aos exercícios, séries e repetições prescritos pelo Personal.
+### 🟢 Para Alunos (Identidade Motivacional)
+- **Agenda Semanal:** Acompanhamento de treinos organizados de Segunda a Sexta.
+- **Detalhamento de Exercícios:** Botão "Ver Ficha" que exibe a lista completa de exercícios, séries e repetições em tempo real.
+- **Interface Responsiva:** Design otimizado para uso em dispositivos móveis dentro da academia.
 
-Interface Responsiva: Otimizada para consulta rápida durante o treino na academia.
+### 🔵 Para Personal Trainers - OMNI.PRO (Identidade Profissional)
+- **Painel Administrativo:** Gestão centralizada de alunos com métricas de desempenho.
+- **Editor de Treinos:** Interface exclusiva para prescrever exercícios detalhados para cada dia da semana.
+- **Atualização Instantânea:** Sincronização direta onde o que o coach salva aparece imediatamente no dashboard do aluno.
 
-Para Personal Trainers - Omni.Pro (Identidade Azul Royal)
-Gestão de Alunos: Painel administrativo para visualizar todos os alunos ativos e pendências.
+### 🏠 Institucional e Planos
+- **Landing Page Completa:** Seções de métricas (+50k alunos), diferenciais técnicos e tecnologia.
+- **Tabela de Planos:** Visualização detalhada dos planos Fit, Black e Smart, com todos os benefícios e promoções restaurados.
 
-Prescrição Semanal: Interface de edição rápida para definir os treinos de cada dia da semana para cada aluno.
+---
 
-Feedback em Tempo Real: As alterações feitas pelo coach são refletidas instantaneamente no painel do aluno.
+## 🛠 Tecnologias Utilizadas
 
-Institucional e Planos
-Landing Page Profissional: Apresentação de métricas, diferenciais e tecnologia.
+- **React.js:** Biblioteca base para a construção da interface.
+- **Lucide React:** Iconografia moderna e intuitiva.
+- **CSS-in-JS:** Estilização dinâmica para alternância de identidades visuais (Verde Neon vs. Azul Royal).
+- **React Hooks (useState):** Gerenciamento de estado global e simulação de persistência de dados.
 
-Gestão de Planos: Sistema de visualização de planos (Fit, Black e Smart) com detalhamento de benefícios e promoções.
+---
 
-🛠 Tecnologias Utilizadas
-React.js: Biblioteca principal para a interface do usuário.
+## 📂 Estrutura do Repositório
 
-Lucide React: Conjunto de ícones para uma interface moderna e intuitiva.
-
-CSS-in-JS: Estilização dinâmica para garantir identidades visuais distintas por perfil.
-
-Hooks (useState): Gerenciamento de estado global e simulação de persistência de dados.
-
-📂 Estrutura do Projeto
-Bash
+```bash
 ├── frontend/
 │   ├── src/
-│   │   ├── App.js         # Componente principal com rotas e dashboards
-│   │   ├── index.js       # Ponto de entrada do React
+│   │   ├── App.js         # Core do sistema (Rotas, Dashboards e Lógica)
+│   │   ├── index.js       # Ponto de entrada
 │   │   └── App.css        # Estilos globais
-├── database.sql           # Schema do banco de dados (PostgreSQL/Supabase)
-└── README.md              # Documentação do projeto
-⚙️ Como Executar o Projeto
-Clone o repositório:
+├── database.sql           # Schema estrutural do banco de dados
+└── README.md              # Documentação oficial
+⚙️ Como Executar
+Clone o projeto:
 
 Bash
-git clone https://github.com/seu-usuario/omnifit-digital.git
-Acesse a pasta do frontend:
+git clone [https://github.com/seu-usuario/omnifit-digital.git](https://github.com/seu-usuario/omnifit-digital.git)
+Entre na pasta do frontend:
 
 Bash
 cd omnifit-digital/frontend
@@ -54,27 +52,15 @@ Instale as dependências:
 
 Bash
 npm install
-Inicie o servidor de desenvolvimento:
+Inicie a aplicação:
 
 Bash
 npm start
-Acesse no navegador:
-http://localhost:3000
+🔐 Credenciais para Teste
+O sistema utiliza lógica de reconhecimento via e-mail no login:
 
-🔐 Credenciais de Teste
-Para navegar entre as diferentes interfaces, utilize os seguintes padrões no login:
+Perfil Personal: Use qualquer e-mail que contenha a palavra personal (ex: coach.personal@omnifit.com).
 
-Acesso Personal: Qualquer e-mail contendo a palavra personal (Ex: personal@omnifit.com).
-
-Acesso Aluno: E-mails que identifiquem os perfis carregados (Ex: julio@email.com, igor@email.com ou luan@email.com).
-
-📝 Próximos Passos
-[ ] Integração com Back-end real (Node.js/Express).
-
-[ ] Implementação de Banco de Dados (PostgreSQL via Supabase).
-
-[ ] Chat em tempo real entre Personal e Aluno.
-
-[ ] Cronômetro e contador de descanso dentro da ficha de treino.
+Perfil Aluno: Use nomes de alunos registrados para carregar treinos específicos (ex: julio@email.com, igor@email.com, luan@email.com).
 
 Desenvolvido por Julio Cesar Nascimento.
