@@ -1,53 +1,66 @@
-# OmniFit Digital 🏋️‍♂️⚡️
+# OMNIFIT - Sistema de Gestão de Academia 🏋️‍♂️
 
-O **OmniFit Digital** é uma plataforma de alta performance desenvolvida para conectar Personal Trainers e Alunos. O sistema oferece uma gestão completa de treinos com interfaces personalizadas, garantindo que a prescrição seja feita de forma profissional e o acompanhamento pelo aluno seja intuitivo e dinâmico.
+O **OMNIFIT** é uma plataforma completa desenvolvida em React para a gestão de academias, personais e alunos. O projeto foca em alta performance, usabilidade moderna (Glassmorphism UI) e controle total sobre o ciclo de vida do aluno, desde a matrícula online até a prescrição detalhada de treinos.
 
-## 🚀 Funcionalidades Principais
+## 🚀 Novas Funcionalidades (Updates Recentes)
 
-### 🟢 Para Alunos (Identidade Motivacional)
-- **Agenda Semanal:** Acompanhamento de treinos organizados de Segunda a Sexta.
-- **Detalhamento de Exercícios:** Botão "Ver Ficha" que exibe a lista completa de exercícios, séries e repetições em tempo real.
-- **Interface Responsiva:** Design otimizado para uso em dispositivos móveis dentro da academia.
-
-### 🔵 Para Personal Trainers - OMNI.PRO (Identidade Profissional)
-- **Painel Administrativo:** Gestão centralizada de alunos com métricas de desempenho.
-- **Editor de Treinos:** Interface exclusiva para prescrever exercícios detalhados para cada dia da semana.
-- **Atualização Instantânea:** Sincronização direta onde o que o coach salva aparece imediatamente no dashboard do aluno.
-
-### 🏠 Institucional e Planos
-- **Landing Page Completa:** Seções de métricas (+50k alunos), diferenciais técnicos e tecnologia.
-- **Tabela de Planos:** Visualização detalhada dos planos Fit, Black e Smart, com todos os benefícios e promoções restaurados...
+- **Matrícula Direta Online**: Agora os alunos podem se cadastrar diretamente através da tela de planos.
+- **Datas Dinâmicas**: Cálculo automático de Início e Vencimento (ciclos de 30 dias) no momento do cadastro.
+- **Ficha de Treino Profissional**: Sistema detalhado com Exercício, Séries, Repetições, Carga e Observações.
+- **Gestão de Cadastro Completa**: Inclusão de campos obrigatórios como CPF, Nascimento, Telefone e Endereço.
 
 ---
 
-## 🛠 Tecnologias Utilizadas
+## 📋 Requisitos Atendidos
 
-- **React.js:** Biblioteca base para a construção da interface.
-- **Lucide React:** Iconografia moderna e intuitiva.
-- **CSS-in-JS:** Estilização dinâmica para alternância de identidades visuais (Verde Neon vs. Azul Royal).
-- **React Hooks (useState):** Gerenciamento de estado global e simulação de persistência de dados.
+### 1. Cadastro de Alunos
+Sistema completo de persistência de dados contendo:
+- Nome, CPF, Data de Nascimento, Telefone, E-mail e Endereço.
+- Status dinâmico: Ativo, Inativo ou Inadimplente.
+
+### 2. Gestão de Planos
+Modelos de negócio pré-configurados:
+- **Plano Fit**: Focado no essencial.
+- **Plano Black**: Acesso total e benefícios exclusivos.
+- **Plano Smart**: Liberdade sem fidelidade.
+
+### 3. Matrícula e Contratos
+- Vinculação automática do aluno ao plano escolhido.
+- Registro de **Data de Início** e **Data de Vencimento**.
+- Controle de situação de pagamento.
+
+### 4. Controle de Acesso
+- Validação automática no Dashboard do Aluno.
+- **Acesso Liberado**: Para alunos Ativos e "Em dia".
+- **Acesso Bloqueado**: Para alunos Inadimplentes ou com planos vencidos.
+
+### 5. Ficha de Treino (Painel do Instrutor)
+Interface avançada de prescrição que permite cadastrar:
+- Nome do exercício, Séries, Repetições, Carga e Observações técnicas.
+- Possibilidade de múltiplos exercícios por dia da semana.
+
+### 6. Relatórios Gerenciais
+Visualização estratégica para o Personal:
+- Quantitativo de Alunos Ativos.
+- Listagem de Alunos Inadimplentes.
+- Identificação do Plano mais utilizado.
 
 ---
 
-## 📂 Estrutura do Repositório
+## 🛠️ Tecnologias Utilizadas
 
-```bash
-├── frontend/
-│   ├── src/
-│   │   ├── App.js         # Core do sistema (Rotas, Dashboards e Lógica)
-│   │   ├── index.js       # Ponto de entrada
-│   │   └── App.css        # Estilos globais
-├── database.sql           # Schema estrutural do banco de dados
-└── README.md              # Documentação oficial
-⚙️ Como Executar
-Clone o projeto:
+- **React.js**: Biblioteca principal para interface.
+- **Lucide React**: Biblioteca de ícones modernos.
+- **LocalStorage**: Persistência de dados local (sem necessidade de banco de dados externo para o protótipo).
+- **CSS-in-JS**: Estilização dinâmica e responsiva.
 
-Bash
-git clone [https://github.com/seu-usuario/omnifit-digital.git](https://github.com/seu-usuario/omnifit-digital.git)
-Entre na pasta do frontend:
+---
 
-Bash
-cd frontend
+## ⚙️ Como Executar o Projeto
+
+1. Clone o repositório:
+   ```bash
+   git clone [https://github.com/seu-usuario/omnifit.git](https://github.com/seu-usuario/omnifit.git)
 Instale as dependências:
 
 Bash
@@ -56,11 +69,30 @@ Inicie a aplicação:
 
 Bash
 npm start
-🔐 Credenciais para Teste
-O sistema utiliza lógica de reconhecimento via e-mail no login:
 
-Perfil Personal: Use qualquer e-mail que contenha a palavra personal (ex: coach.personal@omnifit.com).
+## 🔐 Instruções de Acesso
 
-Perfil Aluno: Use nomes de alunos registrados para carregar treinos específicos (ex: julio@email.com, igor@email.com, luan@email.com).
+Para navegar no sistema, utilize as seguintes credenciais de exemplo:
 
-Desenvolvido por Julio Cesar Nascimento, Henrique Barros, Luan Martiniano e Igor Matos.
+### Painel do Personal (Administrativo)
+- **E-mail**: `admin@personal.com` (ou o e-mail definido como admin no código)
+- **Acesso**: Permite matricular alunos, visualizar relatórios e prescrever treinos detalhados.
+
+### Painel do Aluno
+- **E-mail**: Utilize o e-mail cadastrado no momento da matrícula (Ex: `julio@aluno.com`).
+- **Acesso**: Permite visualizar as datas de vigência do plano e a ficha de exercícios diários.
+- **Nota**: O acesso será bloqueado automaticamente caso o status do aluno seja alterado para "Inadimplente" ou "Inativo" no painel do Personal.
+
+---
+
+## 👥 Equipe de Desenvolvimento
+
+Este projeto foi desenvolvido como parte do trabalho acadêmico pelos membros:
+
+* **Julio Cesar Nascimento**
+* **Henrique Barros**
+* **Luan Martiniano**
+* **Igor Matos**
+
+---
+© 2026 OMNIFIT - Tecnologia aplicada ao Bem-Estar.
