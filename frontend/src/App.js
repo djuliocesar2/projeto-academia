@@ -546,6 +546,27 @@ if (selectedPlan) return (
                      <p style={{ fontSize: '32px', fontWeight: '900', marginTop: '15px' }}>{stats.planoMaisUsado}</p>
                   </GlassCard>
                </div>
+
+               {/* NOVA SEÇÃO: LISTA DE NOMES INADIMPLENTES NOS RELATÓRIOS */}
+               <GlassCard>
+                  <h4 style={{ marginBottom: '20px', color: '#ef4444', fontWeight: 'bold' }}>Alunos com Pendência Financeira</h4>
+                  {listaAlunos.filter(a => a.status === 'Inadimplente').length > 0 ? (
+                    listaAlunos.filter(a => a.status === 'Inadimplente').map(aluno => (
+                      <div key={aluno.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '15px 0', borderBottom: '1px solid rgba(239, 68, 68, 0.1)' }}>
+                        <div>
+                          <span style={{ fontWeight: 'bold', display: 'block', color: 'white' }}>{aluno.nome}</span>
+                          <small style={{ color: '#64748b' }}>E-mail: {aluno.email}</small>
+                        </div>
+                        <span style={{ color: '#ef4444', fontWeight: '900', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ height: '8px', width: '8px', backgroundColor: '#ef4444', borderRadius: '50%', display: 'inline-block' }}></span>
+                          INADIMPLENTE
+                        </span>
+                      </div>
+                    ))
+                  ) : (
+                    <p style={{ color: '#64748b', fontSize: '14px' }}>Nenhuma inadimplência registrada.</p>
+                  )}
+               </GlassCard>
             </div>
           ) : showCadastro ? (
             <div style={{ maxWidth: '600px' }}>
@@ -569,80 +590,71 @@ if (selectedPlan) return (
               </GlassCard>
             </div>
           ) : editingAluno ? (
-            <div style={{ maxWidth: '1000px' }}>
-              <button onClick={() => setEditingAluno(null)} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', marginBottom: '20px', display:'flex', alignItems:'center', gap:'5px' }}><ChevronLeft /> Voltar</button>
-              <SectionTitle title={`Prescrever: ${editingAluno.nome}`} color="#3b82f6" centered={false} />
+            <div style={{ maxWidth: '1200px' }}>
+              <button onClick={() => setEditingAluno(null)} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', marginBottom: '20px', display:'flex', alignItems:'center', gap:'5px' }}>
+                <ChevronLeft /> Voltar para Alunos
+              </button>
+              <SectionTitle title={`Ficha de Treino: ${editingAluno.nome}`} color="#3b82f6" centered={false} />
               
               {['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta'].map((dia) => (
-                <GlassCard key={dia} style={{ marginBottom: '25px', padding: '25px', border: '1px solid rgba(59, 130, 246, 0.1)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                    <h3 style={{ color: '#3b82f6', margin: 0 }}>{dia}</h3>
-                    <button 
-                      onClick={() => {
+                <GlassCard key={dia} style={{ marginBottom: '30px', padding: '30px', border: '1px solid rgba(59, 130, 246, 0.1)' }}>
+                  
+                  {/* CABEÇALHO DO DIA: NOME DO DIA + GRUPAMENTO MUSCULAR */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', gap: '20px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flex: 1 }}>
+                      <h3 style={{ color: '#3b82f6', margin: 0, textTransform: 'uppercase', minWidth: '100px' }}>{dia}</h3>
+                      <input 
+                        style={{ ...inputStyle, marginBottom: 0, maxWidth: '300px', borderBottom: '2px solid #3b82f6' }} 
+                        placeholder="Ex: Peito e Tríceps" 
+                        value={formTreino[`grupamento_${dia}`] || ''} 
+                        onChange={(e) => setFormTreino({...formTreino, [`grupamento_${dia}`]: e.target.value})}
+                      />
+                    </div>
+                    <button onClick={() => {
                         const novoEx = { nome: '', series: '', repeticoes: '', carga: '', obs: '' };
                         const treinosAtuais = { ...formTreino };
                         treinosAtuais[dia] = [...(treinosAtuais[dia] || []), novoEx];
                         setFormTreino(treinosAtuais);
-                      }}
-                      style={{ background: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6', border: '1px solid #3b82f6', padding: '8px 16px', borderRadius: '10px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}
-                    >
-                      + ADICIONAR EXERCÍCIO
+                      }} style={{ background: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6', border: '1px solid #3b82f6', padding: '10px 20px', borderRadius: '10px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}>
+                        + ADICIONAR EXERCÍCIO
                     </button>
                   </div>
 
-                  {(formTreino[dia] || []).map((ex, index) => (
-                    <div key={index} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 2fr 40px', gap: '10px', marginBottom: '15px', alignItems: 'end' }}>
-                      <div>
-                        <label style={{fontSize: '10px', color: '#4b5563', fontWeight: 'bold'}}>EXERCÍCIO</label>
-                        <input style={{...inputStyle, marginBottom: 0, padding: '12px'}} value={ex.nome} onChange={(e) => {
-                          const novos = [...formTreino[dia]];
-                          novos[index].nome = e.target.value;
-                          setFormTreino({...formTreino, [dia]: novos});
-                        }} />
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    {(formTreino[dia] || []).map((ex, index) => (
+                      <div key={index} style={{ 
+                        display: 'grid', 
+                        gridTemplateColumns: '2fr 1fr 1fr 1fr 2fr 40px', 
+                        gap: '20px', // AQUI ESTÁ O ESPAÇAMENTO ENTRE OS CAMPOS
+                        alignItems: 'end',
+                        background: 'rgba(255,255,255,0.02)',
+                        padding: '15px',
+                        borderRadius: '12px'
+                      }}>
+                        <div>
+                          <label style={{fontSize: '10px', color: '#4b5563', fontWeight: 'bold', display: 'block', marginBottom: '5px'}}>EXERCÍCIO</label>
+                          <input style={{...inputStyle, marginBottom: 0}} value={ex.nome} placeholder="Supino Reto" onChange={(e) => { const n = [...formTreino[dia]]; n[index].nome = e.target.value; setFormTreino({...formTreino, [dia]: n}); }} />
+                        </div>
+                        <div>
+                          <label style={{fontSize: '10px', color: '#4b5563', fontWeight: 'bold', display: 'block', marginBottom: '5px'}}>SÉRIES</label>
+                          <input style={{...inputStyle, marginBottom: 0}} value={ex.series} placeholder="4" onChange={(e) => { const n = [...formTreino[dia]]; n[index].series = e.target.value; setFormTreino({...formTreino, [dia]: n}); }} />
+                        </div>
+                        <div>
+                          <label style={{fontSize: '10px', color: '#4b5563', fontWeight: 'bold', display: 'block', marginBottom: '5px'}}>REPS</label>
+                          <input style={{...inputStyle, marginBottom: 0}} value={ex.repeticoes} placeholder="12" onChange={(e) => { const n = [...formTreino[dia]]; n[index].repeticoes = e.target.value; setFormTreino({...formTreino, [dia]: n}); }} />
+                        </div>
+                        <div>
+                          <label style={{fontSize: '10px', color: '#4b5563', fontWeight: 'bold', display: 'block', marginBottom: '5px'}}>CARGA</label>
+                          <input style={{...inputStyle, marginBottom: 0}} value={ex.carga} placeholder="20kg" onChange={(e) => { const n = [...formTreino[dia]]; n[index].carga = e.target.value; setFormTreino({...formTreino, [dia]: n}); }} />
+                        </div>
+                        <div>
+                          <label style={{fontSize: '10px', color: '#4b5563', fontWeight: 'bold', display: 'block', marginBottom: '5px'}}>OBSERVAÇÕES</label>
+                          <input style={{...inputStyle, marginBottom: 0}} value={ex.obs} placeholder="Lento" onChange={(e) => { const n = [...formTreino[dia]]; n[index].obs = e.target.value; setFormTreino({...formTreino, [dia]: n}); }} />
+                        </div>
+                        <button onClick={() => { const n = formTreino[dia].filter((_, i) => i !== index); setFormTreino({...formTreino, [dia]: n}); }} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', height: '45px' }}><XCircle size={24} /></button>
                       </div>
-                      <div>
-                        <label style={{fontSize: '10px', color: '#4b5563', fontWeight: 'bold'}}>SÉRIES</label>
-                        <input style={{...inputStyle, marginBottom: 0, padding: '12px'}} value={ex.series} onChange={(e) => {
-                          const novos = [...formTreino[dia]];
-                          novos[index].series = e.target.value;
-                          setFormTreino({...formTreino, [dia]: novos});
-                        }} />
-                      </div>
-                      <div>
-                        <label style={{fontSize: '10px', color: '#4b5563', fontWeight: 'bold'}}>REPS</label>
-                        <input style={{...inputStyle, marginBottom: 0, padding: '12px'}} value={ex.repeticoes} onChange={(e) => {
-                          const novos = [...formTreino[dia]];
-                          novos[index].repeticoes = e.target.value;
-                          setFormTreino({...formTreino, [dia]: novos});
-                        }} />
-                      </div>
-                      <div>
-                        <label style={{fontSize: '10px', color: '#4b5563', fontWeight: 'bold'}}>CARGA</label>
-                        <input style={{...inputStyle, marginBottom: 0, padding: '12px'}} value={ex.carga} onChange={(e) => {
-                          const novos = [...formTreino[dia]];
-                          novos[index].carga = e.target.value;
-                          setFormTreino({...formTreino, [dia]: novos});
-                        }} />
-                      </div>
-                      <div>
-                        <label style={{fontSize: '10px', color: '#4b5563', fontWeight: 'bold'}}>OBS</label>
-                        <input style={{...inputStyle, marginBottom: 0, padding: '12px'}} value={ex.obs} onChange={(e) => {
-                          const novos = [...formTreino[dia]];
-                          novos[index].obs = e.target.value;
-                          setFormTreino({...formTreino, [dia]: novos});
-                        }} />
-                      </div>
-                      <button 
-                        onClick={() => {
-                          const novos = formTreino[dia].filter((_, i) => i !== index);
-                          setFormTreino({...formTreino, [dia]: novos});
-                        }}
-                        style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', paddingBottom: '12px' }}
-                      >
-                        <XCircle size={24} />
-                      </button>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </GlassCard>
               ))}
               
@@ -661,6 +673,14 @@ if (selectedPlan) return (
                       <p style={{ fontSize: '12px', color: '#64748b', margin: 0 }}>Vence: <span style={{ color: '#3b82f6' }}>{aluno.vencimento || '---'}</span></p>
                     </div>
                   </div>
+
+                  {/* INDICADOR VISUAL DE INADIMPLÊNCIA NO CARD */}
+                      {aluno.status === 'Inadimplente' && (
+                        <span style={{ fontSize: '12px', color: '#ef4444', fontWeight: '900', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                          <span style={{ height: '8px', width: '8px', backgroundColor: '#ef4444', borderRadius: '50%', display: 'inline-block' }}></span>
+                          INADIMPLENTE
+                        </span>
+                      )}
                   
                   <button 
                     onClick={() => { 
