@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react'; // Adicionado useEffect
 import { 
   Dumbbell, CheckCircle, LayoutDashboard, User, Zap, 
   Monitor, Shield, Users, ArrowRight, XCircle, Activity, Lock, Mail, Plus, List,
@@ -38,28 +38,43 @@ export default function OmniFitApp() {
   const [emailInput, setEmailInput] = useState('');
   const [senhaInput, setSenhaInput] = useState('');
   
-  // 1. ESTADO DE ALUNOS
-  const [listaAlunos, setListaAlunos] = useState([
-    { 
-      id: 1, nome: "Julio Cesar", email: "julio@aluno.com", cpf: "123.456.789-00", 
-      status: "Ativo", plano: "Black", vencimento: "2026-12-30", pagamento: "Em dia" 
-    },
-    { 
-      id: 2, nome: "Igor Matos", email: "igor@aluno.com", cpf: "987.654.321-11", 
-      status: "Inadimplente", plano: "Fit", vencimento: "2026-01-01", pagamento: "Pendente" 
-    }
-  ]);
-
-  // 2. ESTADO DE TREINOS
-  const [treinosPorAluno, setTreinosPorAluno] = useState({
-    1: { Segunda: 'Supino Reto (4x10), Peck Deck (3x12), Tríceps Pulley (4x15)', Terça: 'Puxada Frente (4x12), Remada Curvada (3x12)', Quarta: 'Descanso', Quinta: 'Leg Press (4x10)', Sexta: 'Bíceps (3x12)' },
-    2: { Segunda: '', Terça: '', Quarta: '', Quinta: '', Sexta: '' }
+  // 1. ESTADO DE ALUNOS COM PERSISTÊNCIA
+  const [listaAlunos, setListaAlunos] = useState(() => {
+    const saved = localStorage.getItem('omnifit_alunos');
+    return saved ? JSON.parse(saved) : [
+      { 
+        id: 1, nome: "Julio Cesar", email: "julio@aluno.com", cpf: "123.456.789-00", 
+        status: "Ativo", plano: "Black", vencimento: "2026-12-30", pagamento: "Em dia" 
+      },
+      { 
+        id: 2, nome: "Igor Matos", email: "igor@aluno.com", cpf: "987.654.321-11", 
+        status: "Inadimplente", plano: "Fit", vencimento: "2026-01-01", pagamento: "Pendente" 
+      }
+    ];
   });
+
+  // 2. ESTADO DE TREINOS COM PERSISTÊNCIA
+  const [treinosPorAluno, setTreinosPorAluno] = useState(() => {
+    const saved = localStorage.getItem('omnifit_treinos');
+    return saved ? JSON.parse(saved) : {
+      1: { Segunda: 'Supino Reto (4x10), Peck Deck (3x12), Tríceps Pulley (4x15)', Terça: 'Puxada Frente (4x12), Remada Curvada (3x12)', Quarta: 'Descanso', Quinta: 'Leg Press (4x10)', Sexta: 'Bíceps (3x12)' },
+      2: { Segunda: '', Terça: '', Quarta: '', Quinta: '', Sexta: '' }
+    };
+  });
+
+  // SALVAMENTO AUTOMÁTICO
+  useEffect(() => {
+    localStorage.setItem('omnifit_alunos', JSON.stringify(listaAlunos));
+  }, [listaAlunos]);
+
+  useEffect(() => {
+    localStorage.setItem('omnifit_treinos', JSON.stringify(treinosPorAluno));
+  }, [treinosPorAluno]);
 
   const [editingAluno, setEditingAluno] = useState(null); 
   const [viewingFicha, setViewingFicha] = useState(null);
   const [showCadastro, setShowCadastro] = useState(false);
-  const [showRelatorios, setShowRelatorios] = useState(false); // NOVO ESTADO
+  const [showRelatorios, setShowRelatorios] = useState(false); 
   const [formTreino, setFormTreino] = useState({});
   const [novoAluno, setNovoAluno] = useState({ nome: '', email: '', cpf: '', plano: 'Fit', status: 'Ativo', pagamento: 'Em dia' });
 
@@ -92,12 +107,13 @@ export default function OmniFitApp() {
 
   const cadastrarAluno = (e) => {
     e.preventDefault();
-    const id = listaAlunos.length + 1;
+    const id = Date.now(); // ID Único baseado no tempo para evitar conflitos
     const alunoCompleto = { ...novoAluno, id, vencimento: '2026-12-30' };
     setListaAlunos([...listaAlunos, alunoCompleto]);
     setTreinosPorAluno({ ...treinosPorAluno, [id]: { Segunda: '', Terça: '', Quarta: '', Quinta: '', Sexta: '' } });
     setShowCadastro(false);
     alert("Aluno matriculado com sucesso!");
+    setNovoAluno({ nome: '', email: '', cpf: '', plano: 'Fit', status: 'Ativo', pagamento: 'Em dia' }); // Limpa o form
   };
 
   const handleSaveTreino = () => {
@@ -106,7 +122,6 @@ export default function OmniFitApp() {
     setEditingAluno(null);
   };
 
-  // Lógica de Relatórios (Requisito 6)
   const getRelatorios = () => {
     const ativos = listaAlunos.filter(a => a.status === 'Ativo').length;
     const inadimplentes = listaAlunos.filter(a => a.status === 'Inadimplente').length;
@@ -115,7 +130,6 @@ export default function OmniFitApp() {
       return acc;
     }, {});
     const planoMaisUsado = Object.entries(planosContagem).sort((a,b) => b[1] - a[1])[0]?.[0] || 'N/A';
-
     return { ativos, inadimplentes, planoMaisUsado };
   };
 
@@ -159,7 +173,7 @@ export default function OmniFitApp() {
     </div>
   );
 
-// --- TELA DE PLANOS (AJUSTADO PARA CABER EM UMA TELA) ---
+  // --- TELA DE PLANOS ---
   if (page === 'plans') return (
     <div style={{ minHeight: '100vh', backgroundColor: '#050505', color: 'white', padding: '60px 20px', background: 'radial-gradient(circle at 50% 0%, #14532d 0%, #050505 50%)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       <div style={{ width: '100%', maxWidth: '1200px' }}>
@@ -171,8 +185,6 @@ export default function OmniFitApp() {
         </div>
 
         <div style={{ display: 'flex', gap: '15px', justifyContent: 'center', alignItems: 'stretch', flexWrap: 'nowrap' }}>
-          
-          {/* PLANO FIT */}
           <GlassCard style={{ flex: '1', padding: '24px', display: 'flex', flexDirection: 'column', minWidth: '0' }}>
             <h3 style={{ fontSize: '22px', fontWeight: '900', marginBottom: '5px' }}>Plano Fit</h3>
             <p style={{ color: '#9ca3af', fontSize: '13px', marginBottom: '15px', height: '40px' }}>O essencial para treinar na sua unidade.</p>
@@ -189,7 +201,6 @@ export default function OmniFitApp() {
             </ul>
           </GlassCard>
 
-          {/* PLANO BLACK */}
           <GlassCard style={{ flex: '1.1', padding: '24px', border: '2px solid #22c55e', position: 'relative', background: 'rgba(34, 197, 94, 0.05)', display: 'flex', flexDirection: 'column', minWidth: '0', transform: 'scale(1.02)' }}>
             <div style={{ position: 'absolute', top: '-12px', left: '50%', transform: 'translateX(-50%)', backgroundColor: '#22c55e', color: 'black', padding: '2px 10px', borderRadius: '4px', fontSize: '10px', fontWeight: '900', whiteSpace: 'nowrap' }}>MAIS VANTAJOSO</div>
             <h3 style={{ fontSize: '22px', fontWeight: '900', marginBottom: '5px' }}>Plano Black</h3>
@@ -208,7 +219,6 @@ export default function OmniFitApp() {
             </ul>
           </GlassCard>
 
-          {/* PLANO SMART */}
           <GlassCard style={{ flex: '1', padding: '24px', display: 'flex', flexDirection: 'column', minWidth: '0' }}>
             <h3 style={{ fontSize: '22px', fontWeight: '900', marginBottom: '5px' }}>Plano Smart</h3>
             <p style={{ color: '#9ca3af', fontSize: '13px', marginBottom: '15px', height: '40px' }}>Liberdade total sem fidelidade.</p>
@@ -224,11 +234,11 @@ export default function OmniFitApp() {
               <li style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}><CheckCircle size={14} color="#22c55e" /> Área de musculação</li>
             </ul>
           </GlassCard>
-
         </div>
       </div>
     </div>
   );
+
   // --- DASHBOARD DO ALUNO ---
   if (page === 'dashboard_aluno' && user) {
     const dadosAtuais = listaAlunos.find(a => a.id === user.id);
@@ -341,7 +351,7 @@ export default function OmniFitApp() {
                   <input style={inputStyle} placeholder="email@aluno.com" required value={novoAluno.email} onChange={e => setNovoAluno({...novoAluno, email: e.target.value})} />
                   
                   <select 
-                    style={{ ...inputStyle, cursor: 'pointer', color: 'white', backgroundColor: '#0a0f1e' }} 
+                    style={{ ...inputStyle, cursor: 'pointer', color: 'white', backgroundColor: '#0a0f1e', appearance: 'auto' }} 
                     value={novoAluno.plano} 
                     onChange={e => setNovoAluno({...novoAluno, plano: e.target.value})}
                     required
