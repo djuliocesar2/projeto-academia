@@ -47,7 +47,7 @@ git clone [https://github.com/seu-usuario/omnifit-digital.git](https://github.co
 Entre na pasta do frontend:
 
 Bash
-cd omnifit-digital/frontend
+cd frontend
 Instale as dependências:
 
 Bash
