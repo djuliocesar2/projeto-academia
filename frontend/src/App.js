@@ -54,13 +54,26 @@ export default function OmniFitApp() {
   });
 
   // 2. ESTADO DE TREINOS COM PERSISTÊNCIA
-  const [treinosPorAluno, setTreinosPorAluno] = useState(() => {
-    const saved = localStorage.getItem('omnifit_treinos');
-    return saved ? JSON.parse(saved) : {
-      1: { Segunda: 'Supino Reto (4x10), Peck Deck (3x12), Tríceps Pulley (4x15)', Terça: 'Puxada Frente (4x12), Remada Curvada (3x12)', Quarta: 'Descanso', Quinta: 'Leg Press (4x10)', Sexta: 'Bíceps (3x12)' },
-      2: { Segunda: '', Terça: '', Quarta: '', Quinta: '', Sexta: '' }
-    };
-  });
+const [treinosPorAluno, setTreinosPorAluno] = useState(() => {
+  const saved = localStorage.getItem('omnifit_treinos');
+  try {
+    const parsed = saved ? JSON.parse(saved) : {};
+    // Garante que para cada aluno, os dias sejam arrays, não strings
+    listaAlunos.forEach(aluno => {
+      if (!parsed[aluno.id] || typeof parsed[aluno.id] === 'string') {
+        parsed[aluno.id] = { Segunda: [], Terça: [], Quarta: [], Quinta: [], Sexta: [] };
+      } else {
+        // Garante que cada dia dentro do objeto do aluno seja um array
+        ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta'].forEach(dia => {
+          if (!Array.isArray(parsed[aluno.id][dia])) parsed[aluno.id][dia] = [];
+        });
+      }
+    });
+    return parsed;
+  } catch (e) {
+    return {};
+  }
+});
 
   // SALVAMENTO AUTOMÁTICO
   useEffect(() => {
@@ -75,8 +88,12 @@ export default function OmniFitApp() {
   const [viewingFicha, setViewingFicha] = useState(null);
   const [showCadastro, setShowCadastro] = useState(false);
   const [showRelatorios, setShowRelatorios] = useState(false); 
+  const [selectedPlan, setSelectedPlan] = useState(null); // Controla se o aluno está no fluxo de matrícula
   const [formTreino, setFormTreino] = useState({});
-  const [novoAluno, setNovoAluno] = useState({ nome: '', email: '', cpf: '', plano: 'Fit', status: 'Ativo', pagamento: 'Em dia' });
+  const [novoAluno, setNovoAluno] = useState({ 
+  nome: '', email: '', cpf: '', telefone: '', nascimento: '', endereco: '', 
+  plano: 'Fit', status: 'Ativo', pagamento: 'Em dia' 
+});
 
   const handleLogout = () => {
     setUser(null);
@@ -105,16 +122,48 @@ export default function OmniFitApp() {
     }
   };
 
-  const cadastrarAluno = (e) => {
-    e.preventDefault();
-    const id = Date.now(); // ID Único baseado no tempo para evitar conflitos
-    const alunoCompleto = { ...novoAluno, id, vencimento: '2026-12-30' };
-    setListaAlunos([...listaAlunos, alunoCompleto]);
-    setTreinosPorAluno({ ...treinosPorAluno, [id]: { Segunda: '', Terça: '', Quarta: '', Quinta: '', Sexta: '' } });
-    setShowCadastro(false);
-    alert("Aluno matriculado com sucesso!");
-    setNovoAluno({ nome: '', email: '', cpf: '', plano: 'Fit', status: 'Ativo', pagamento: 'Em dia' }); // Limpa o form
+const cadastrarAluno = (e) => {
+  e.preventDefault();
+
+  // 1. Geração de Datas Dinâmicas
+  const dataInicio = new Date(); // Captura data e hora atual
+  const dataVencimento = new Date();
+  dataVencimento.setDate(dataInicio.getDate() + 30); // Soma exatamente 30 dias
+
+  // Formatação para exibição amigável (Ex: 14/05/2026)
+  const formatarData = (data) => data.toLocaleDateString('pt-BR');
+
+  const id = Date.now();
+  const alunoCompleto = { 
+    ...novoAluno, 
+    id, 
+    status: 'Ativo', 
+    pagamento: 'Em dia',
+    dataInicio: formatarData(dataInicio),
+    vencimento: formatarData(dataVencimento), // Substitui a data fixa anterior
+    timestamp: dataInicio.getTime() // Útil para ordenação se precisar
   };
+
+  // 2. Atualização dos Estados
+  setListaAlunos(prevAlunos => [...prevAlunos, alunoCompleto]);
+  setTreinosPorAluno(prev => ({ 
+  ...prev, 
+  [id]: { Segunda: [], Terça: [], Quarta: [], Quinta: [], Sexta: [] } 
+}));
+
+  // 3. Fluxo de Navegação
+  if (selectedPlan) {
+    alert(`Matrícula realizada! Seu plano vence em: ${formatarData(dataVencimento)}`);
+    setSelectedPlan(null);
+    setPage('login');
+  } else {
+    setShowCadastro(false);
+    alert("Aluno cadastrado com sucesso!");
+  }
+
+  // 4. Reset do formulário
+  setNovoAluno({ nome: '', email: '', cpf: '', plano: 'Fit', status: 'Ativo', pagamento: 'Em dia' });
+};
 
   const handleSaveTreino = () => {
     setTreinosPorAluno({ ...treinosPorAluno, [editingAluno.id]: formTreino });
@@ -132,7 +181,94 @@ export default function OmniFitApp() {
     const planoMaisUsado = Object.entries(planosContagem).sort((a,b) => b[1] - a[1])[0]?.[0] || 'N/A';
     return { ativos, inadimplentes, planoMaisUsado };
   };
+// Interface de Matrícula para o Aluno (quando ele clica em contratar)
+// --- TELA DE MATRÍCULA ONLINE (ESTILIZADA COM FUNDO DA HOME) ---
+if (selectedPlan) return (
+    <div style={{ 
+      minHeight: '100vh', 
+      backgroundColor: '#050505', 
+      display: 'flex', 
+      alignItems: 'center', 
+      justifyContent: 'center', 
+      padding: '20px',
+      background: 'radial-gradient(circle at 50% 0%, #14532d 0%, #050505 50%)' 
+    }}>
+      <GlassCard style={{ width: '100%', maxWidth: '600px', border: '1px solid rgba(34, 197, 94, 0.2)' }}>
+        <button 
+          onClick={() => {
+            setSelectedPlan(null);
+            setNovoAluno({ nome: '', email: '', cpf: '', telefone: '', nascimento: '', endereco: '', plano: 'Fit', status: 'Ativo', pagamento: 'Em dia' });
+          }} 
+          style={{ background: 'none', border: 'none', color: '#4b5563', cursor: 'pointer', marginBottom: '20px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '5px' }}
+        >
+          <ChevronLeft size={18} /> Voltar para Planos
+        </button>
+        
+        <h2 style={{ fontSize: '28px', fontWeight: '900', color: 'white', marginBottom: '5px' }}>Finalizar Matrícula</h2>
+        <p style={{ color: '#22c55e', fontWeight: 'bold', marginBottom: '25px' }}>Plano Selecionado: {selectedPlan.toUpperCase()}</p>
+        
+        <form onSubmit={cadastrarAluno}>
+            {/* LINHA 1: NOME */}
+            <div style={{ marginBottom: '15px' }}>
+              <label style={{ display: 'block', color: '#9ca3af', fontSize: '10px', marginBottom: '5px', fontWeight: 'bold', letterSpacing: '1px' }}>NOME COMPLETO *</label>
+              <input style={inputStyle} placeholder="Ex: Julio Cesar" required value={novoAluno.nome}
+                onChange={(e) => setNovoAluno(prev => ({ ...prev, nome: e.target.value, plano: selectedPlan }))} 
+              />
+            </div>
 
+            {/* LINHA 2: CPF E NASCIMENTO */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '15px' }}>
+              <div>
+                <label style={{ display: 'block', color: '#9ca3af', fontSize: '10px', marginBottom: '5px', fontWeight: 'bold' }}>CPF *</label>
+                <input style={inputStyle} placeholder="000.000.000-00" required value={novoAluno.cpf}
+                  onChange={(e) => setNovoAluno(prev => ({ ...prev, cpf: e.target.value }))} 
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', color: '#9ca3af', fontSize: '10px', marginBottom: '5px', fontWeight: 'bold' }}>DATA DE NASCIMENTO *</label>
+                <input style={{...inputStyle, colorScheme: 'dark'}} type="date" required value={novoAluno.nascimento}
+                  onChange={(e) => setNovoAluno(prev => ({ ...prev, nascimento: e.target.value }))} 
+                />
+              </div>
+            </div>
+
+            {/* LINHA 3: TELEFONE E E-MAIL */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '15px' }}>
+              <div>
+                <label style={{ display: 'block', color: '#9ca3af', fontSize: '10px', marginBottom: '5px', fontWeight: 'bold' }}>TELEFONE *</label>
+                <input style={inputStyle} placeholder="(11) 99999-9999" required value={novoAluno.telefone}
+                  onChange={(e) => setNovoAluno(prev => ({ ...prev, telefone: e.target.value }))} 
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', color: '#9ca3af', fontSize: '10px', marginBottom: '5px', fontWeight: 'bold' }}>E-MAIL *</label>
+                <input style={inputStyle} type="email" placeholder="nome@aluno.com" required value={novoAluno.email}
+                  onChange={(e) => setNovoAluno(prev => ({ ...prev, email: e.target.value }))} 
+                />
+              </div>
+            </div>
+
+            {/* LINHA 4: ENDEREÇO */}
+            <div style={{ marginBottom: '25px' }}>
+              <label style={{ display: 'block', color: '#9ca3af', fontSize: '10px', marginBottom: '5px', fontWeight: 'bold' }}>ENDEREÇO COMPLETO *</label>
+              <input style={inputStyle} placeholder="Rua, Número, Bairro, Cidade" required value={novoAluno.endereco}
+                onChange={(e) => setNovoAluno(prev => ({ ...prev, endereco: e.target.value }))} 
+              />
+            </div>
+
+            <button type="submit" 
+              style={{ 
+                width: '100%', padding: '18px', background: '#22c55e', color: 'black', 
+                borderRadius: '16px', border: 'none', fontWeight: '900', fontSize: '16px',
+                cursor: 'pointer', transition: '0.3s', textTransform: 'uppercase'
+              }}
+            >
+              Concluir Matrícula
+            </button>
+        </form>
+      </GlassCard>
+    </div>
+  );
   // --- TELA 1: LANDING PAGE ---
   if (page === 'landing') return (
     <div style={{ minHeight: '100vh', backgroundColor: '#050505', color: 'white', fontFamily: '"Inter", sans-serif', scrollBehavior: 'smooth' }}>
@@ -173,18 +309,20 @@ export default function OmniFitApp() {
     </div>
   );
 
-  // --- TELA DE PLANOS ---
+// --- TELA DE PLANOS (CORRIGIDA PARA MATRÍCULA DIRETA) ---
   if (page === 'plans') return (
     <div style={{ minHeight: '100vh', backgroundColor: '#050505', color: 'white', padding: '60px 20px', background: 'radial-gradient(circle at 50% 0%, #14532d 0%, #050505 50%)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       <div style={{ width: '100%', maxWidth: '1200px' }}>
         <button onClick={() => setPage('landing')} style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px', fontWeight: 'bold' }}>← VOLTAR</button>
         
         <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-          <span style={{ color: '#22c55e', fontWeight: 'bold', fontSize: '12px', letterSpacing: '2px' }}>PLANOS</span>
+          <span style={{ color: '#22c55e', fontWeight: 'bold', fontSize: '12px', letterSpacing: '2px' }}>MATRÍCULA ONLINE</span>
           <h2 style={{ fontSize: '32px', fontWeight: '900', marginTop: '5px' }}>Escolha sua jornada</h2>
         </div>
 
         <div style={{ display: 'flex', gap: '15px', justifyContent: 'center', alignItems: 'stretch', flexWrap: 'nowrap' }}>
+          
+          {/* PLANO FIT */}
           <GlassCard style={{ flex: '1', padding: '24px', display: 'flex', flexDirection: 'column', minWidth: '0' }}>
             <h3 style={{ fontSize: '22px', fontWeight: '900', marginBottom: '5px' }}>Plano Fit</h3>
             <p style={{ color: '#9ca3af', fontSize: '13px', marginBottom: '15px', height: '40px' }}>O essencial para treinar na sua unidade.</p>
@@ -194,13 +332,19 @@ export default function OmniFitApp() {
                 <span style={{ fontSize: '32px', fontWeight: '900', color: '#22c55e' }}>R$ 0,00*</span>
               </div>
             </div>
-            <button onClick={() => setPage('login')} style={{ width: '100%', padding: '12px', borderRadius: '10px', border: 'none', backgroundColor: '#22c55e', color: 'black', fontWeight: '900', cursor: 'pointer', marginBottom: '20px' }}>CONTRATAR</button>
+            <button 
+              onClick={() => setSelectedPlan('Fit')} 
+              style={{ width: '100%', padding: '12px', borderRadius: '10px', border: 'none', backgroundColor: '#22c55e', color: 'black', fontWeight: '900', cursor: 'pointer', marginBottom: '20px' }}
+            >
+              CONTRATAR
+            </button>
             <ul style={{ padding: 0, listStyle: 'none', borderTop: '1px solid #1f2937', paddingTop: '15px', fontSize: '13px' }}>
               <li style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}><CheckCircle size={14} color="#22c55e" /> Musculação e aeróbicos</li>
               <li style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}><CheckCircle size={14} color="#22c55e" /> OmniFit App</li>
             </ul>
           </GlassCard>
 
+          {/* PLANO BLACK */}
           <GlassCard style={{ flex: '1.1', padding: '24px', border: '2px solid #22c55e', position: 'relative', background: 'rgba(34, 197, 94, 0.05)', display: 'flex', flexDirection: 'column', minWidth: '0', transform: 'scale(1.02)' }}>
             <div style={{ position: 'absolute', top: '-12px', left: '50%', transform: 'translateX(-50%)', backgroundColor: '#22c55e', color: 'black', padding: '2px 10px', borderRadius: '4px', fontSize: '10px', fontWeight: '900', whiteSpace: 'nowrap' }}>MAIS VANTAJOSO</div>
             <h3 style={{ fontSize: '22px', fontWeight: '900', marginBottom: '5px' }}>Plano Black</h3>
@@ -211,7 +355,12 @@ export default function OmniFitApp() {
                 <span style={{ fontSize: '32px', fontWeight: '900', color: '#22c55e' }}>R$ 0,00*</span>
               </div>
             </div>
-            <button onClick={() => setPage('login')} style={{ width: '100%', padding: '12px', borderRadius: '10px', border: 'none', backgroundColor: '#22c55e', color: 'black', fontWeight: '900', cursor: 'pointer', marginBottom: '20px' }}>CONTRATAR</button>
+            <button 
+              onClick={() => setSelectedPlan('Black')} 
+              style={{ width: '100%', padding: '12px', borderRadius: '10px', border: 'none', backgroundColor: '#22c55e', color: 'black', fontWeight: '900', cursor: 'pointer', marginBottom: '20px' }}
+            >
+              CONTRATAR
+            </button>
             <ul style={{ padding: 0, listStyle: 'none', borderTop: '1px solid #1f2937', paddingTop: '15px', fontSize: '13px' }}>
               <li style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', fontWeight: 'bold' }}><CheckCircle size={14} color="#22c55e" /> Unidades ilimitadas</li>
               <li style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}><CheckCircle size={14} color="#22c55e" /> Leve amigos</li>
@@ -219,6 +368,7 @@ export default function OmniFitApp() {
             </ul>
           </GlassCard>
 
+          {/* PLANO SMART */}
           <GlassCard style={{ flex: '1', padding: '24px', display: 'flex', flexDirection: 'column', minWidth: '0' }}>
             <h3 style={{ fontSize: '22px', fontWeight: '900', marginBottom: '5px' }}>Plano Smart</h3>
             <p style={{ color: '#9ca3af', fontSize: '13px', marginBottom: '15px', height: '40px' }}>Liberdade total sem fidelidade.</p>
@@ -228,7 +378,12 @@ export default function OmniFitApp() {
                 <span style={{ fontSize: '32px', fontWeight: '900', color: '#22c55e' }}>R$ 0,00*</span>
               </div>
             </div>
-            <button onClick={() => setPage('login')} style={{ width: '100%', padding: '12px', borderRadius: '10px', border: 'none', backgroundColor: '#22c55e', color: 'black', fontWeight: '900', cursor: 'pointer', marginBottom: '20px' }}>CONTRATAR</button>
+            <button 
+              onClick={() => setSelectedPlan('Smart')} 
+              style={{ width: '100%', padding: '12px', borderRadius: '10px', border: 'none', backgroundColor: '#22c55e', color: 'black', fontWeight: '900', cursor: 'pointer', marginBottom: '20px' }}
+            >
+              CONTRATAR
+            </button>
             <ul style={{ padding: 0, listStyle: 'none', borderTop: '1px solid #1f2937', paddingTop: '15px', fontSize: '13px' }}>
               <li style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}><CheckCircle size={14} color="#22c55e" /> Sem fidelidade</li>
               <li style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}><CheckCircle size={14} color="#22c55e" /> Área de musculação</li>
@@ -239,7 +394,7 @@ export default function OmniFitApp() {
     </div>
   );
 
-  // --- DASHBOARD DO ALUNO ---
+// --- DASHBOARD DO ALUNO (ATUALIZADO COM FICHA DETALHADA) ---
   if (page === 'dashboard_aluno' && user) {
     const dadosAtuais = listaAlunos.find(a => a.id === user.id);
     const acessoBloqueado = dadosAtuais?.status !== 'Ativo' || dadosAtuais?.pagamento !== 'Em dia';
@@ -248,11 +403,19 @@ export default function OmniFitApp() {
       <div style={{ minHeight: '100vh', backgroundColor: '#050505', display: 'flex', color: 'white' }}>
         <aside style={{ width: '280px', borderRight: '1px solid #1f2937', padding: '40px 24px' }}>
           <div style={{ fontWeight: '900', fontSize: '24px', color: '#22c55e', marginBottom: '40px' }}>OMNIFIT.</div>
-          <nav><div style={{ padding: '16px', borderRadius: '12px', backgroundColor: 'rgba(34, 197, 94, 0.1)', color: '#22c55e', fontWeight: 'bold' }}><LayoutDashboard size={20}/> DASHBOARD</div></nav>
+          <nav>
+            <div style={{ padding: '16px', borderRadius: '12px', backgroundColor: 'rgba(34, 197, 94, 0.1)', color: '#22c55e', fontWeight: 'bold' }}>
+              <LayoutDashboard size={20} style={{ marginRight: '10px' }} /> DASHBOARD
+            </div>
+          </nav>
         </aside>
+        
         <main style={{ flex: 1, padding: '60px', overflowY: 'auto' }}>
           <header style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'60px' }}>
-            <h2 style={{ fontSize: '32px', fontWeight: '900' }}>Olá, {user.nome}!</h2>
+            <div>
+              <h2 style={{ fontSize: '32px', fontWeight: '900' }}>Olá, {user.nome}!</h2>
+              <p style={{ color: '#4b5563' }}>Seu progresso começa aqui.</p>
+            </div>
             <button onClick={handleLogout} style={{ background:'rgba(255,255,255,0.05)', border:'1px solid #374151', color:'#9ca3af', padding:'10px 20px', borderRadius:'12px', cursor:'pointer' }}>Sair</button>
           </header>
 
@@ -260,40 +423,92 @@ export default function OmniFitApp() {
             <GlassCard style={{ border: '2px solid #ef4444', textAlign: 'center' }}>
               <AlertTriangle size={60} color="#ef4444" style={{ margin: '0 auto 20px' }} />
               <h3 style={{ fontSize: '24px', color: '#ef4444' }}>ACESSO BLOQUEADO</h3>
-              <p style={{ color: '#9ca3af', marginTop: '10px' }}>Detectamos pendências financeiras. Regularize seu plano na recepção.</p>
+              <p style={{ color: '#9ca3af', marginTop: '10px' }}>Detectamos pendências. Regularize seu plano na recepção.</p>
             </GlassCard>
           ) : !viewingFicha ? (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '15px' }}>
-              {['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta'].map((dia, idx) => {
-                const treino = treinosPorAluno[user.id]?.[dia];
-                return (
-                  <div key={idx} style={{ background: 'rgba(255,255,255,0.02)', border: treino ? '1px solid #22c55e' : '1px solid #111', borderRadius: '24px', padding: '24px' }}>
-                    <span style={{ color: '#4b5563', fontWeight: 'bold', fontSize: '11px' }}>{dia.toUpperCase()}</span>
-                    <h4 style={{ fontSize: '18px', margin: '10px 0', color: treino ? 'white' : '#4b5563' }}>{treino ? treino.split(',')[0] : 'Vazio'}</h4>
-                    {treino && <button onClick={() => setViewingFicha({ dia, conteudo: treino })} style={{ width: '100%', marginTop: '15px', padding: '10px', borderRadius: '10px', background: '#22c55e', color: 'black', border: 'none', fontWeight: 'bold', cursor: 'pointer' }}>VER FICHA</button>}
-                  </div>
-                );
-              })}
+            <div>
+              {/* INFORMAÇÕES DO CONTRATO */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '40px' }}>
+                <GlassCard style={{ padding: '20px', borderLeft: '4px solid #22c55e' }}>
+                  <span style={{ color: '#4b5563', fontSize: '11px', fontWeight: 'bold' }}>INÍCIO DO PLANO</span>
+                  <div style={{ color: 'white', fontSize: '18px', fontWeight: '900', marginTop: '5px' }}>{dadosAtuais?.dataInicio || '---'}</div>
+                </GlassCard>
+                <GlassCard style={{ padding: '20px', borderLeft: '4px solid #22c55e' }}>
+                  <span style={{ color: '#22c55e', fontSize: '11px', fontWeight: 'bold' }}>VENCIMENTO</span>
+                  <div style={{ color: 'white', fontSize: '18px', fontWeight: '900', marginTop: '5px' }}>{dadosAtuais?.vencimento || '---'}</div>
+                </GlassCard>
+                <GlassCard style={{ padding: '20px' }}>
+                  <span style={{ color: '#4b5563', fontSize: '11px', fontWeight: 'bold' }}>STATUS</span>
+                  <div style={{ color: '#22c55e', fontSize: '18px', fontWeight: '900', marginTop: '5px' }}>{dadosAtuais?.pagamento?.toUpperCase() || 'EM DIA'}</div>
+                </GlassCard>
+              </div>
+
+              <h3 style={{ marginBottom: '20px', fontSize: '18px', fontWeight: 'bold' }}>Sua Semana de Treinos</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '15px' }}>
+                {['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta'].map((dia, idx) => {
+                  const treino = treinosPorAluno[user.id]?.[dia] || [];
+                  const temTreino = treino.length > 0;
+                  return (
+                    <div key={idx} style={{ background: 'rgba(255,255,255,0.02)', border: temTreino ? '1px solid #22c55e' : '1px solid #111', borderRadius: '24px', padding: '24px' }}>
+                      <span style={{ color: '#4b5563', fontWeight: 'bold', fontSize: '11px' }}>{dia.toUpperCase()}</span>
+                      <h4 style={{ fontSize: '18px', margin: '10px 0', color: temTreino ? 'white' : '#4b5563' }}>
+                        {temTreino ? `${treino.length} Exercícios` : 'Descanso'}
+                      </h4>
+                      {temTreino && (
+                        <button onClick={() => setViewingFicha({ dia, conteudo: treino })} style={{ width: '100%', marginTop: '15px', padding: '10px', borderRadius: '10px', background: '#22c55e', color: 'black', border: 'none', fontWeight: 'bold', cursor: 'pointer' }}>
+                          VER FICHA
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           ) : (
-            <GlassCard style={{ borderLeft: '6px solid #22c55e' }}>
-              <button onClick={() => setViewingFicha(null)} style={{ background:'none', border:'none', color:'#22c55e', cursor:'pointer', marginBottom:'20px', fontWeight:'bold', display:'flex', alignItems:'center', gap:'5px' }}><ChevronLeft size={18}/> VOLTAR</button>
+            <div style={{ animation: 'fadeIn 0.3s ease-in-out' }}>
+              <button onClick={() => setViewingFicha(null)} style={{ background:'none', border:'none', color:'#22c55e', cursor:'pointer', marginBottom:'20px', fontWeight:'bold', display:'flex', alignItems:'center', gap:'5px' }}>
+                <ChevronLeft size={18}/> VOLTAR
+              </button>
+              
+              <SectionTitle title={`Treino: ${viewingFicha.dia}`} centered={false} />
+
               <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                  {viewingFicha.conteudo.split(',').map((ex, i) => (
-                      <div key={i} style={{ background: 'rgba(255,255,255,0.05)', padding: '20px', borderRadius: '15px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ fontSize: '18px' }}>{ex.trim()}</span>
-                          <CheckCircle size={20} color="#22c55e" />
-                      </div>
-                  ))}
+                {viewingFicha.conteudo.map((ex, i) => (
+                  <GlassCard key={i} style={{ background: 'rgba(255,255,255,0.05)', padding: '25px', borderRadius: '20px', display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 2fr 40px', alignItems: 'center', gap: '15px' }}>
+                    <div>
+                      <span style={{ color: '#22c55e', fontSize: '10px', fontWeight: 'bold' }}>EXERCÍCIO</span>
+                      <div style={{ fontSize: '18px', fontWeight: 'bold', color: 'white' }}>{ex.nome}</div>
+                    </div>
+                    <div style={{ textAlign: 'center' }}>
+                      <span style={{ color: '#4b5563', fontSize: '10px' }}>SÉRIES</span>
+                      <div style={{ fontSize: '16px', fontWeight: 'bold' }}>{ex.series}</div>
+                    </div>
+                    <div style={{ textAlign: 'center' }}>
+                      <span style={{ color: '#4b5563', fontSize: '10px' }}>REPS</span>
+                      <div style={{ fontSize: '16px', fontWeight: 'bold' }}>{ex.repeticoes}</div>
+                    </div>
+                    <div style={{ textAlign: 'center' }}>
+                      <span style={{ color: '#4b5563', fontSize: '10px' }}>CARGA</span>
+                      <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#22c55e' }}>{ex.carga}</div>
+                    </div>
+                    <div style={{ paddingLeft: '15px', borderLeft: '1px solid #111' }}>
+                      <span style={{ color: '#4b5563', fontSize: '10px' }}>OBSERVAÇÕES</span>
+                      <div style={{ fontSize: '14px', color: '#9ca3af' }}>{ex.obs || '-'}</div>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                      <CheckCircle size={24} color="#22c55e" />
+                    </div>
+                  </GlassCard>
+                ))}
               </div>
-            </GlassCard>
+            </div>
           )}
         </main>
       </div>
     );
   }
 
-  // --- DASHBOARD DO PERSONAL ---
+// --- DASHBOARD DO PERSONAL (COMPLETO E CORRIGIDO) ---
   if (page === 'dashboard_personal' && user) {
     const stats = getRelatorios();
 
@@ -302,8 +517,8 @@ export default function OmniFitApp() {
         <aside style={{ width: '280px', borderRight: '1px solid #1e293b', padding: '40px 24px' }}>
           <div style={{ fontWeight: '900', fontSize: '24px', color: '#3b82f6', marginBottom: '40px' }}><Shield size={24} /> OMNI.PRO</div>
           <nav style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <button onClick={() => {setShowCadastro(false); setEditingAluno(null); setShowRelatorios(false)}} style={{ textAlign:'left', padding:'14px', borderRadius:'12px', background: !showCadastro && !showRelatorios ? 'rgba(59, 130, 246, 0.1)' : 'transparent', color: '#3b82f6', border:'none', cursor:'pointer', display:'flex', alignItems:'center', gap:'10px' }}><Users size={20}/> Alunos</button>
-            <button onClick={() => {setShowCadastro(true); setShowRelatorios(false)}} style={{ textAlign:'left', padding:'14px', borderRadius:'12px', background: showCadastro ? 'rgba(59, 130, 246, 0.1)' : 'transparent', color: '#3b82f6', border:'none', cursor:'pointer', display:'flex', alignItems:'center', gap:'10px' }}><UserPlus size={20}/> Matricular</button>
+            <button onClick={() => {setShowCadastro(false); setEditingAluno(null); setShowRelatorios(false)}} style={{ textAlign:'left', padding:'14px', borderRadius:'12px', background: !showCadastro && !showRelatorios && !editingAluno ? 'rgba(59, 130, 246, 0.1)' : 'transparent', color: '#3b82f6', border:'none', cursor:'pointer', display:'flex', alignItems:'center', gap:'10px' }}><Users size={20}/> Alunos</button>
+            <button onClick={() => {setShowCadastro(true); setShowRelatorios(false); setEditingAluno(null)}} style={{ textAlign:'left', padding:'14px', borderRadius:'12px', background: showCadastro ? 'rgba(59, 130, 246, 0.1)' : 'transparent', color: '#3b82f6', border:'none', cursor:'pointer', display:'flex', alignItems:'center', gap:'10px' }}><UserPlus size={20}/> Matricular</button>
             <button onClick={() => {setShowRelatorios(true); setShowCadastro(false); setEditingAluno(null)}} style={{ textAlign:'left', padding:'14px', borderRadius:'12px', background: showRelatorios ? 'rgba(59, 130, 246, 0.1)' : 'transparent', color: '#3b82f6', border:'none', cursor:'pointer', display:'flex', alignItems:'center', gap:'10px' }}><BarChart3 size={20}/> Relatórios</button>
           </nav>
         </aside>
@@ -319,73 +534,149 @@ export default function OmniFitApp() {
                <SectionTitle title="Relatórios da Academia" color="#3b82f6" centered={false} />
                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
                   <GlassCard style={{ border: '1px solid #22c55e' }}>
-                     <h3 style={{ fontSize: '14px', color: '#22c55e', textTransform: 'uppercase' }}>Alunos Ativos</h3>
+                     <h3 style={{ fontSize: '14px', color: '#22c55e', textTransform: 'uppercase', fontWeight: 'bold' }}>Alunos Ativos</h3>
                      <p style={{ fontSize: '48px', fontWeight: '900' }}>{stats.ativos}</p>
                   </GlassCard>
                   <GlassCard style={{ border: '1px solid #ef4444' }}>
-                     <h3 style={{ fontSize: '14px', color: '#ef4444', textTransform: 'uppercase' }}>Inadimplentes</h3>
+                     <h3 style={{ fontSize: '14px', color: '#ef4444', textTransform: 'uppercase', fontWeight: 'bold' }}>Inadimplentes</h3>
                      <p style={{ fontSize: '48px', fontWeight: '900' }}>{stats.inadimplentes}</p>
                   </GlassCard>
                   <GlassCard>
-                     <h3 style={{ fontSize: '14px', color: '#3b82f6', textTransform: 'uppercase' }}>Plano Popular</h3>
+                     <h3 style={{ fontSize: '14px', color: '#3b82f6', textTransform: 'uppercase', fontWeight: 'bold' }}>Plano Popular</h3>
                      <p style={{ fontSize: '32px', fontWeight: '900', marginTop: '15px' }}>{stats.planoMaisUsado}</p>
                   </GlassCard>
                </div>
-               <GlassCard>
-                  <h4 style={{ marginBottom: '20px' }}>Lista de Inadimplentes</h4>
-                  {listaAlunos.filter(a => a.status === 'Inadimplente').map(a => (
-                    <div key={a.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #1e293b' }}>
-                      <span>{a.nome}</span>
-                      <span style={{ color: '#ef4444' }}>Plano: {a.plano}</span>
-                    </div>
-                  ))}
-               </GlassCard>
             </div>
           ) : showCadastro ? (
             <div style={{ maxWidth: '600px' }}>
               <SectionTitle title="Nova Matrícula" color="#3b82f6" centered={false} />
               <GlassCard type="personal">
-                <form onSubmit={cadastrarAluno}>
-                  <input style={inputStyle} placeholder="Nome Completo" required value={novoAluno.nome} onChange={e => setNovoAluno({...novoAluno, nome: e.target.value})} />
-                  <input style={inputStyle} placeholder="CPF" required value={novoAluno.cpf} onChange={e => setNovoAluno({...novoAluno, cpf: e.target.value})} />
-                  <input style={inputStyle} placeholder="email@aluno.com" required value={novoAluno.email} onChange={e => setNovoAluno({...novoAluno, email: e.target.value})} />
-                  
-                  <select 
-                    style={{ ...inputStyle, cursor: 'pointer', color: 'white', backgroundColor: '#0a0f1e', appearance: 'auto' }} 
-                    value={novoAluno.plano} 
-                    onChange={e => setNovoAluno({...novoAluno, plano: e.target.value})}
-                    required
-                  >
-                    <option value="Fit" style={{ color: '#000', backgroundColor: '#fff' }}>Plano Fit</option>
-                    <option value="Black" style={{ color: '#000', backgroundColor: '#fff' }}>Plano Black</option>
-                    <option value="Smart" style={{ color: '#000', backgroundColor: '#fff' }}>Plano Smart</option>
-                  </select>
-                  <button type="submit" style={{ width:'100%', padding:'16px', borderRadius:'12px', background:'#3b82f6', color:'white', border:'none', fontWeight:'bold', cursor:'pointer' }}>EFETIVAR MATRÍCULA</button>
-                </form>
+<form onSubmit={cadastrarAluno}>
+  <input style={inputStyle} placeholder="Nome Completo" required value={novoAluno.nome} onChange={e => setNovoAluno({...novoAluno, nome: e.target.value})} />
+  <input style={inputStyle} placeholder="CPF" required value={novoAluno.cpf} onChange={e => setNovoAluno({...novoAluno, cpf: e.target.value})} />
+  <input style={inputStyle} type="date" placeholder="Nascimento" required value={novoAluno.nascimento} onChange={e => setNovoAluno({...novoAluno, nascimento: e.target.value})} />
+  <input style={inputStyle} placeholder="Telefone" required value={novoAluno.telefone} onChange={e => setNovoAluno({...novoAluno, telefone: e.target.value})} />
+  <input style={inputStyle} placeholder="Endereço" required value={novoAluno.endereco} onChange={e => setNovoAluno({...novoAluno, endereco: e.target.value})} />
+  <input style={inputStyle} placeholder="email@aluno.com" required value={novoAluno.email} onChange={e => setNovoAluno({...novoAluno, email: e.target.value})} />
+  
+  <select style={{ ...inputStyle, color: 'white', backgroundColor: '#0a0f1e' }} value={novoAluno.plano} onChange={e => setNovoAluno({...novoAluno, plano: e.target.value})} required>
+    <option value="Fit">Plano Fit</option>
+    <option value="Black">Plano Black</option>
+    <option value="Smart">Plano Smart</option>
+  </select>
+  <button type="submit" style={{ width:'100%', padding:'16px', borderRadius:'12px', background:'#3b82f6', color:'white', border:'none', fontWeight:'bold' }}>EFETIVAR MATRÍCULA</button>
+</form>
               </GlassCard>
             </div>
           ) : editingAluno ? (
-            <div>
+            <div style={{ maxWidth: '1000px' }}>
               <button onClick={() => setEditingAluno(null)} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', marginBottom: '20px', display:'flex', alignItems:'center', gap:'5px' }}><ChevronLeft /> Voltar</button>
-              <SectionTitle title={`Ficha: ${editingAluno.nome}`} color="#3b82f6" centered={false} />
+              <SectionTitle title={`Prescrever: ${editingAluno.nome}`} color="#3b82f6" centered={false} />
+              
               {['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta'].map((dia) => (
-                <div key={dia} style={{ marginBottom: '15px' }}>
-                  <label style={{ display:'block', color:'#3b82f6', fontWeight:'bold', marginBottom:'5px' }}>{dia}</label>
-                  <input style={inputStyle} value={formTreino[dia] || ''} onChange={(e) => setFormTreino({...formTreino, [dia]: e.target.value})} placeholder="Exercícios, séries e carga..." />
-                </div>
+                <GlassCard key={dia} style={{ marginBottom: '25px', padding: '25px', border: '1px solid rgba(59, 130, 246, 0.1)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                    <h3 style={{ color: '#3b82f6', margin: 0 }}>{dia}</h3>
+                    <button 
+                      onClick={() => {
+                        const novoEx = { nome: '', series: '', repeticoes: '', carga: '', obs: '' };
+                        const treinosAtuais = { ...formTreino };
+                        treinosAtuais[dia] = [...(treinosAtuais[dia] || []), novoEx];
+                        setFormTreino(treinosAtuais);
+                      }}
+                      style={{ background: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6', border: '1px solid #3b82f6', padding: '8px 16px', borderRadius: '10px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}
+                    >
+                      + ADICIONAR EXERCÍCIO
+                    </button>
+                  </div>
+
+                  {(formTreino[dia] || []).map((ex, index) => (
+                    <div key={index} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 2fr 40px', gap: '10px', marginBottom: '15px', alignItems: 'end' }}>
+                      <div>
+                        <label style={{fontSize: '10px', color: '#4b5563', fontWeight: 'bold'}}>EXERCÍCIO</label>
+                        <input style={{...inputStyle, marginBottom: 0, padding: '12px'}} value={ex.nome} onChange={(e) => {
+                          const novos = [...formTreino[dia]];
+                          novos[index].nome = e.target.value;
+                          setFormTreino({...formTreino, [dia]: novos});
+                        }} />
+                      </div>
+                      <div>
+                        <label style={{fontSize: '10px', color: '#4b5563', fontWeight: 'bold'}}>SÉRIES</label>
+                        <input style={{...inputStyle, marginBottom: 0, padding: '12px'}} value={ex.series} onChange={(e) => {
+                          const novos = [...formTreino[dia]];
+                          novos[index].series = e.target.value;
+                          setFormTreino({...formTreino, [dia]: novos});
+                        }} />
+                      </div>
+                      <div>
+                        <label style={{fontSize: '10px', color: '#4b5563', fontWeight: 'bold'}}>REPS</label>
+                        <input style={{...inputStyle, marginBottom: 0, padding: '12px'}} value={ex.repeticoes} onChange={(e) => {
+                          const novos = [...formTreino[dia]];
+                          novos[index].repeticoes = e.target.value;
+                          setFormTreino({...formTreino, [dia]: novos});
+                        }} />
+                      </div>
+                      <div>
+                        <label style={{fontSize: '10px', color: '#4b5563', fontWeight: 'bold'}}>CARGA</label>
+                        <input style={{...inputStyle, marginBottom: 0, padding: '12px'}} value={ex.carga} onChange={(e) => {
+                          const novos = [...formTreino[dia]];
+                          novos[index].carga = e.target.value;
+                          setFormTreino({...formTreino, [dia]: novos});
+                        }} />
+                      </div>
+                      <div>
+                        <label style={{fontSize: '10px', color: '#4b5563', fontWeight: 'bold'}}>OBS</label>
+                        <input style={{...inputStyle, marginBottom: 0, padding: '12px'}} value={ex.obs} onChange={(e) => {
+                          const novos = [...formTreino[dia]];
+                          novos[index].obs = e.target.value;
+                          setFormTreino({...formTreino, [dia]: novos});
+                        }} />
+                      </div>
+                      <button 
+                        onClick={() => {
+                          const novos = formTreino[dia].filter((_, i) => i !== index);
+                          setFormTreino({...formTreino, [dia]: novos});
+                        }}
+                        style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', paddingBottom: '12px' }}
+                      >
+                        <XCircle size={24} />
+                      </button>
+                    </div>
+                  ))}
+                </GlassCard>
               ))}
-              <button onClick={handleSaveTreino} style={{ width: '100%', padding: '20px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '15px', fontWeight: 'bold', marginTop: '20px', cursor: 'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:'10px' }}><Save /> SALVAR TREINOS</button>
+              
+              <button onClick={handleSaveTreino} style={{ width: '100%', padding: '20px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '15px', fontWeight: 'bold', marginTop: '20px', cursor: 'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:'10px' }}>
+                <Save /> SALVAR FICHA COMPLETA
+              </button>
             </div>
           ) : (
             <div style={{ display: 'grid', gap: '15px' }}>
               {listaAlunos.map(aluno => (
                 <GlassCard key={aluno.id} type="personal" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px' }}>
                   <div>
-                    <h4 style={{ fontSize: '18px', fontWeight: 'bold' }}>{aluno.nome}</h4>
-                    <p style={{ fontSize: '12px', color: '#64748b' }}>Plano: {aluno.plano} | {aluno.email}</p>
-                    <span style={{ fontSize: '12px', color: aluno.status === 'Ativo' ? '#22c55e' : '#ef4444', fontWeight: 'bold' }}>● {aluno.status.toUpperCase()}</span>
+                    <h4 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0 }}>{aluno.nome}</h4>
+                    <div style={{ display: 'flex', gap: '15px', marginTop: '8px' }}>
+                      <p style={{ fontSize: '12px', color: '#64748b', margin: 0 }}>Início: {aluno.dataInicio || '---'}</p>
+                      <p style={{ fontSize: '12px', color: '#64748b', margin: 0 }}>Vence: <span style={{ color: '#3b82f6' }}>{aluno.vencimento || '---'}</span></p>
+                    </div>
                   </div>
-                  <button onClick={() => { setEditingAluno(aluno); setFormTreino(treinosPorAluno[aluno.id] || {}); }} style={{ padding: '10px 20px', borderRadius: '10px', background: '#3b82f6', color: 'white', border: 'none', fontWeight: 'bold', cursor: 'pointer' }}>PRESCREVER</button>
+                  
+                  <button 
+                    onClick={() => { 
+                      const dadosTreino = treinosPorAluno[aluno.id];
+                      // CORREÇÃO: Garante que o formulário sempre receba um objeto de arrays, evitando o erro de .map()
+                      if (!dadosTreino || typeof dadosTreino === 'string') {
+                        setFormTreino({ Segunda: [], Terça: [], Quarta: [], Quinta: [], Sexta: [] });
+                      } else {
+                        setFormTreino(dadosTreino);
+                      }
+                      setEditingAluno(aluno); 
+                    }} 
+                    style={{ padding: '10px 20px', borderRadius: '10px', background: '#3b82f6', color: 'white', border: 'none', fontWeight: 'bold', cursor: 'pointer' }}
+                  >
+                    PRESCREVER
+                  </button>
                 </GlassCard>
               ))}
             </div>
